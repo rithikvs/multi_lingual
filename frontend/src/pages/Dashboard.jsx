@@ -6,8 +6,8 @@ import SpeechTranscriber from '../components/SpeechTranscriber';
 import ChatBox from '../components/ChatBox';
 import EmergencyContactsPanel from '../components/EmergencyContactsPanel';
 import ContactSelectionDialog from '../components/ContactSelectionDialog';
-import { api, getAuthHeaders } from '../utils/api';
 import { getCurrentLocation } from '../utils/location';
+import { buildManualSmsBody, getSelectedSmsContacts, openSmsCompose, toSmsStatus } from '../utils/smsLinks';
 
 const LOCAL_MESSAGES_KEY = 'sign_interpreter_messages';
 
@@ -99,35 +99,23 @@ const Dashboard = ({ textScale, ttsLanguage }) => {
   };
 
   const sendChatMessageWithSms = async ({ sender, messageType, text }) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      saveLocalMessage(sender, messageType, text);
-      return;
-    }
-
     try {
       const location = await getCurrentLocation();
-      const response = await api.post('/api/messages/send', {
-        text,
-        messageType,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        contactIds: selectedContactIds
-      }, {
-        headers: getAuthHeaders()
-      });
+      const smsContacts = getSelectedSmsContacts({ contacts, selectedContactIds });
 
-      if (response.data.success) {
-        if (response.data.data) {
-          setMessages(prev => [...prev, response.data.data]);
-        }
-        setError(response.data.isSimulated
-          ? 'Chat saved. SMS was simulated because Twilio is not using live delivery settings.'
-          : 'Chat saved and server SMS delivery processed.');
+      if (smsContacts.length === 0) {
+        setError('Add or select at least one active emergency contact to open the linked phone SMS app.');
+        await saveMessageOnly({ sender, messageType, content: text });
+        return;
       }
+
+      const body = buildManualSmsBody({ body: text, mapsLink: location.mapsLink });
+      openSmsCompose({ phone: smsContacts[0].phone || smsContacts[0].mobileNumber, body });
+      await saveMessageOnly({ sender, messageType, content: text });
+      setError('Linked phone SMS app opened. Confirm Send in the messaging window.');
     } catch (err) {
       console.error('Error sending chat SMS:', err);
-      setError(err.response?.data?.message || err.message || 'SMS failed. Chat was saved without SMS.');
+      setError(err.response?.data?.message || err.message || 'Could not open linked phone SMS. Chat was saved without SMS.');
       try {
         await saveMessageOnly({ sender, messageType, content: text });
       } catch (saveError) {
@@ -175,48 +163,34 @@ const Dashboard = ({ textScale, ttsLanguage }) => {
   const handleSendSharedMessage = async () => {
     if (!sharePayload) return;
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setShareResult({
-        success: false,
-        message: 'Log in and configure Twilio/MongoDB to send real SMS messages.'
-      });
-      return;
-    }
-
     setShareLoading(true);
     setShareResult(null);
 
     try {
       const location = shareLocation || await getCurrentLocation();
       setShareLocation(location);
+      const smsContacts = getSelectedSmsContacts({ contacts, selectedContactIds });
 
-      const response = await api.post('/api/messages/send', {
-        text: sharePayload.text,
-        messageType: sharePayload.messageType,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        contactIds: selectedContactIds
-      }, {
-        headers: getAuthHeaders()
-      });
-
-      if (response.data.success) {
-        const hasFailedSms = response.data.smsStatus?.some((status) => status.status === 'failed');
-        const hasSentSms = response.data.smsStatus?.some((status) => status.status === 'sent' || status.status.includes('success'));
+      if (smsContacts.length === 0) {
         setShareResult({
-          success: hasSentSms && !hasFailedSms,
-          message: hasFailedSms
-            ? 'SMS failed. Check the failed recipient details below.'
-            : response.data.isSimulated
-            ? 'SMS simulated successfully. Add Twilio credentials for live delivery.'
-            : 'SMS sent successfully.',
-          smsStatus: response.data.smsStatus
+          success: false,
+          message: 'Add or select at least one active emergency contact.'
         });
-        if (response.data.data) {
-          setMessages((previous) => [...previous, response.data.data]);
-        }
+        return;
       }
+
+      const body = buildManualSmsBody({ body: sharePayload.text, mapsLink: location.mapsLink });
+      openSmsCompose({ phone: smsContacts[0].phone || smsContacts[0].mobileNumber, body });
+      await saveMessageOnly({
+        sender: sharePayload.messageType === 'speech' ? 'hearing_user' : 'deaf_user',
+        messageType: sharePayload.messageType,
+        content: sharePayload.text
+      });
+      setShareResult({
+        success: true,
+        message: 'Linked phone SMS app opened. Confirm Send in the messaging window. Use the buttons below for any additional contacts.',
+        smsStatus: smsContacts.map((contact) => toSmsStatus(contact))
+      });
     } catch (err) {
       setShareResult({
         success: false,
@@ -288,6 +262,7 @@ const Dashboard = ({ textScale, ttsLanguage }) => {
               fetchMessages={fetchMessages}
               localMessagesKey={LOCAL_MESSAGES_KEY}
               selectedContactIds={selectedContactIds}
+              contacts={contacts}
             />
           </Box>
 

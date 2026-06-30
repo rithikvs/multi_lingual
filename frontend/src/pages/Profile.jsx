@@ -110,7 +110,7 @@ const Profile = ({ textScale }) => {
     setContactMsg({ type: '', text: '' });
     const token = localStorage.getItem('token');
 
-    // Phone format check (+ country prefix for Twilio)
+    // Phone format check (+ country prefix for SMS delivery)
     if (!contactPhone.startsWith('+')) {
       setContactMsg({ 
         type: 'error', 

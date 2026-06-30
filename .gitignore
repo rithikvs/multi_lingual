@@ -16,3 +16,6 @@ __pycache__/
 *.pth
 *.pt
 *.onnx
+firebase-service-account.json
+backend/firebase-service-account.json
+android-sms-companion/app/google-services.json

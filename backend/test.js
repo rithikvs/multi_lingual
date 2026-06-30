@@ -53,7 +53,7 @@ const runVerification = async () => {
     const contact = await EmergencyContact.create({
       userId: user._id,
       name: 'Jane Doe',
-      phone: '+15005550006', // Twilio test number
+      phone: '+15005550006',
       relationship: 'Mother',
       isPrimary: true
     });

@@ -156,7 +156,7 @@ function AppContent() {
           <Box className="rounded-lg border border-sky-400/20 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
             {token
               ? 'Signed in. Emergency contacts and message history are saved in MongoDB Atlas.'
-              : 'Please log in to save emergency contacts and send Twilio SMS with MongoDB history.'}
+              : 'Please log in to save emergency contacts and send phone-SIM SMS with MongoDB history.'}
           </Box>
         </Container>
       )}

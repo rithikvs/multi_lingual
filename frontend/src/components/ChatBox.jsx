@@ -21,15 +21,26 @@ import {
   DeleteSweep as ClearHistoryIcon,
   MyLocation as GpsIcon
 } from '@mui/icons-material';
-import { api, getAuthHeaders } from '../utils/api';
 import { getCurrentLocation } from '../utils/location';
+import { buildSmsUri, getSelectedSmsContacts, openSmsCompose, toSmsStatus } from '../utils/smsLinks';
 
-const ChatBox = ({ textScale, ttsLanguage, messages, setMessages, fetchMessages, localMessagesKey, selectedContactIds = [] }) => {
+const ChatBox = ({ textScale, ttsLanguage, messages, setMessages, fetchMessages, localMessagesKey, selectedContactIds = [], contacts = [] }) => {
   const [sosLoading, setSosLoading] = useState(false);
   const [sosResult, setSosResult] = useState(null);
   const [sosDialogOpen, setSosDialogOpen] = useState(false);
   
   const messagesEndRef = useRef(null);
+  const failedSosStatuses = sosResult?.smsStatus?.filter((status) => status.status !== 'sent') || [];
+  const manualSosBody = [
+    'EMERGENCY ALERT',
+    '',
+    'The user requires immediate assistance.',
+    '',
+    sosResult?.mapsLink ? `Current Location:\n${sosResult.mapsLink}` : '',
+    '',
+    'Please respond immediately.'
+  ].filter(Boolean).join('\n');
+  const isPositiveSmsStatus = (status) => status.status === 'sent' || status.status === 'ready_to_send' || status.status.includes('success');
 
   // Auto scroll to bottom of chat
   useEffect(() => {
@@ -88,6 +99,18 @@ const ChatBox = ({ textScale, ttsLanguage, messages, setMessages, fetchMessages,
     try {
       const location = await getCurrentLocation();
       const token = localStorage.getItem('token');
+      const smsContacts = getSelectedSmsContacts({ contacts, selectedContactIds });
+      const mapsLink = `https://maps.google.com/?q=${location.latitude},${location.longitude}`;
+      const body = [
+        'EMERGENCY ALERT',
+        '',
+        'The user requires immediate assistance.',
+        '',
+        'Current Location:',
+        mapsLink,
+        '',
+        'Please respond immediately.'
+      ].join('\n');
 
       if (!token) {
         triggerLocalSos(location.latitude, location.longitude);
@@ -95,29 +118,32 @@ const ChatBox = ({ textScale, ttsLanguage, messages, setMessages, fetchMessages,
         return;
       }
 
-      const response = await api.post('/api/emergency/send-sos', {
-        latitude: location.latitude,
-        longitude: location.longitude,
-        contactIds: selectedContactIds
+      if (smsContacts.length === 0) {
+        setSosResult({
+          success: false,
+          message: 'Add or select at least one active emergency contact to open the linked phone SMS app.'
+        });
+        return;
+      }
+
+      openSmsCompose({ phone: smsContacts[0].phone || smsContacts[0].mobileNumber, body });
+
+      await axios.post('http://localhost:5000/api/messages', {
+        sender: 'deaf_user',
+        messageType: 'sos',
+        content: `[ALERT] SOS opened in linked phone SMS app. Location: ${mapsLink}. Time: ${new Date().toISOString()}`
       }, {
-        headers: getAuthHeaders()
+        headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (response.data.success) {
-        const hasFailedSms = response.data.smsStatus?.some((status) => status.status === 'failed');
-        setSosResult({
-          success: !hasFailedSms,
-          message: hasFailedSms
-            ? 'SOS was saved, but SMS delivery failed. Check recipient details below.'
-            : response.data.isSimulated
-            ? 'SOS simulated successfully. Add Twilio credentials for live delivery.'
-            : 'SOS SMS sent successfully.',
-          mapsLink: response.data.mapsLink,
-          smsStatus: response.data.smsStatus,
-          isSimulated: response.data.isSimulated
-        });
-        fetchMessages();
-      }
+      setSosResult({
+        success: true,
+        message: 'Linked phone SMS app opened. Confirm Send in the messaging window. Use the buttons below for any additional contacts.',
+        mapsLink,
+        smsStatus: smsContacts.map((contact) => toSmsStatus(contact)),
+        isSimulated: false
+      });
+      fetchMessages();
     } catch (err) {
       setSosResult({
         success: false,
@@ -150,7 +176,7 @@ const ChatBox = ({ textScale, ttsLanguage, messages, setMessages, fetchMessages,
       success: true,
       mapsLink,
       isSimulated: true,
-      note: 'Demo mode: log in and configure Twilio credentials for real SMS delivery.',
+      note: 'Demo mode: log in and use the linked phone SMS flow for real SMS delivery.',
       smsStatus: [
         {
           contactName: 'Demo Emergency Contact',
@@ -345,11 +371,11 @@ const ChatBox = ({ textScale, ttsLanguage, messages, setMessages, fetchMessages,
                       >
                         <span className="font-medium text-white">{status.contactName} ({status.phone})</span>
                         <span className={`font-bold ${
-                          status.status.includes('success') || status.status === 'sent' 
+                          isPositiveSmsStatus(status)
                             ? 'text-accentGreen' 
                             : 'text-red-500'
                         }`}>
-                          {status.status.includes('success') ? 'SIMULATED' : status.status.toUpperCase()}
+                          {status.status === 'ready_to_send' ? 'OPENED' : status.status.includes('success') ? 'SIMULATED' : status.status.toUpperCase()}
                         </span>
                       </Box>
                     ))}
@@ -357,14 +383,68 @@ const ChatBox = ({ textScale, ttsLanguage, messages, setMessages, fetchMessages,
                   
                   {sosResult.isSimulated && (
                     <Typography variant="caption" className="text-slate-500 block text-center pt-2">
-                      (Running in Development mode. Twilio SMS outputs were output to console logs).
+                      (Running in demo mode. Use the linked phone SMS flow for live SIM delivery).
                     </Typography>
+                  )}
+
+                  {failedSosStatuses.length > 0 && (
+                    <Box className="space-y-2 bg-slate-950 p-3 rounded border border-white/5">
+                      <Typography variant="subtitle2" className="font-bold text-slate-200">
+                        Send through linked phone
+                      </Typography>
+                      <Typography variant="caption" className="block text-slate-400">
+                        Opens your laptop's default SMS app. If Phone Link is registered, confirm Send there.
+                      </Typography>
+                      <Box className="flex flex-wrap gap-2">
+                        {failedSosStatuses.map((status, index) => (
+                          <Button
+                            key={`${status.phone}-manual-${index}`}
+                            component="a"
+                            href={buildSmsUri({ phone: status.phone, body: manualSosBody })}
+                            variant="outlined"
+                            size="small"
+                            color="primary"
+                            startIcon={<SOSIcon />}
+                          >
+                            Open SMS app: {status.contactName}
+                          </Button>
+                        ))}
+                      </Box>
+                    </Box>
                   )}
                 </>
               ) : (
-                <Alert severity="error" sx={{ bgcolor: 'rgba(239,68,68,0.1)', color: '#f87171', borderRadius: '8px' }}>
-                  {sosResult?.message || 'An unknown error occurred during dispatch.'}
-                </Alert>
+                <>
+                  <Alert severity="error" sx={{ bgcolor: 'rgba(239,68,68,0.1)', color: '#f87171', borderRadius: '8px' }}>
+                    {sosResult?.message || 'An unknown error occurred during dispatch.'}
+                  </Alert>
+
+                  {failedSosStatuses.length > 0 && (
+                    <Box className="space-y-2 bg-slate-950 p-3 rounded border border-white/5">
+                      <Typography variant="subtitle2" className="font-bold text-slate-200">
+                        Send through linked phone
+                      </Typography>
+                      <Typography variant="caption" className="block text-slate-400">
+                        Opens your laptop's default SMS app. If Phone Link is registered, confirm Send there.
+                      </Typography>
+                      <Box className="flex flex-wrap gap-2">
+                        {failedSosStatuses.map((status, index) => (
+                          <Button
+                            key={`${status.phone}-manual-failed-${index}`}
+                            component="a"
+                            href={buildSmsUri({ phone: status.phone, body: manualSosBody })}
+                            variant="outlined"
+                            size="small"
+                            color="primary"
+                            startIcon={<SOSIcon />}
+                          >
+                            Open SMS app: {status.contactName}
+                          </Button>
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </>
               )}
             </Box>
           )}

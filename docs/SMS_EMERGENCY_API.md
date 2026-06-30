@@ -9,13 +9,23 @@ PORT=5000
 MONGODB_URI=mongodb://localhost:27017/sign_interpreter
 JWT_SECRET=change_me
 
-TWILIO_ACCOUNT_SID=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-TWILIO_AUTH_TOKEN=your_twilio_auth_token
-TWILIO_PHONE_NUMBER=+1234567890
+FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
+ANDROID_SMS_FCM_TOKEN=your_android_companion_fcm_registration_token
+ANDROID_SMS_CALLBACK_BASE_URL=https://your-public-backend.example.com
+ANDROID_SMS_CALLBACK_TOKEN=replace_with_a_long_random_secret
+ANDROID_SMS_CALLBACK_TIMEOUT_MS=30000
 REGISTERED_MOBILE_NUMBER=+919876543210
 ```
 
 `REGISTERED_MOBILE_NUMBER` is always included in SMS recipients. If it is empty, the backend falls back to the authenticated user's `mobileNumber`.
+
+`ANDROID_SMS_CALLBACK_BASE_URL` must be reachable from the Android phone, because the phone reports SMS results to `/api/android-sms/callback`.
+
+## SMS Provider
+
+SMS is sent by the Android companion app in `android-sms-companion` using Android `SmsManager`.
+
+The backend sends a Firebase Cloud Messaging data message to the companion app. The app sends the SMS from the phone's SIM card and calls back with the result.
 
 ## MongoDB Schema
 
@@ -132,6 +142,29 @@ Sends recognized speech/sign text with GPS location.
 }
 ```
 
+### POST /api/android-sms/callback
+
+Used by the Android companion app only.
+
+```http
+Authorization: Bearer <ANDROID_SMS_CALLBACK_TOKEN>
+Content-Type: application/json
+```
+
+```json
+{
+  "requestId": "uuid",
+  "phoneStatus": "ready",
+  "smsStatus": [
+    {
+      "contactName": "Parent",
+      "phone": "+919876543210",
+      "status": "sent"
+    }
+  ]
+}
+```
+
 ## Frontend Flow
 
 1. Add contacts in the Emergency Contacts panel.
@@ -146,7 +179,9 @@ The browser handles GPS with the Geolocation API. If GPS permission is denied, n
 ## Testing
 
 1. Start MongoDB.
-2. Start backend:
+2. Configure and install the Android companion app.
+3. Expose the backend to the Android phone if running locally.
+4. Start backend:
 
 ```bash
 cd backend
@@ -154,7 +189,7 @@ npm install
 npm run dev
 ```
 
-3. Start frontend:
+5. Start frontend:
 
 ```bash
 cd frontend
@@ -162,9 +197,8 @@ npm install
 npm run dev
 ```
 
-4. Log in or register, then add emergency contacts.
-5. Test with Twilio test credentials first. If Twilio env vars are missing or mock-like, backend logs simulated sends instead of sending live SMS.
-6. Run build verification:
+6. Log in or register, add emergency contacts, and press the existing SOS button.
+7. Run build verification:
 
 ```bash
 cd frontend
@@ -173,4 +207,4 @@ npm run build
 
 ## Error Handling
 
-The implementation handles invalid phone numbers, duplicate contacts, GPS permission denial, invalid coordinates, missing recipients, and per-recipient Twilio failures.
+The implementation handles invalid phone numbers, duplicate contacts, GPS permission denial, invalid coordinates, missing recipients, Android permission denial, no SIM card, airplane mode, no service, SMS send timeout, and SMS send failure.

@@ -17,6 +17,7 @@ import {
   LocationOn as LocationIcon,
   Sms as SmsIcon
 } from '@mui/icons-material';
+import { buildManualSmsBody, buildSmsUri } from '../utils/smsLinks';
 
 const ContactSelectionDialog = ({
   open,
@@ -32,9 +33,12 @@ const ContactSelectionDialog = ({
   onConfirm
 }) => {
   const activeContacts = contacts.filter((contact) => contact.isActive !== false);
-  const hasFailedSms = result?.smsStatus?.some((status) => status.status === 'failed');
-  const hasSentSms = result?.smsStatus?.some((status) => status.status === 'sent' || status.status.includes('success'));
+  const isPositiveSmsStatus = (status) => status.status === 'sent' || status.status === 'ready_to_send' || status.status.includes('success');
+  const hasFailedSms = result?.smsStatus?.some((status) => !isPositiveSmsStatus(status));
+  const hasSentSms = result?.smsStatus?.some(isPositiveSmsStatus);
   const alertSeverity = result?.success && hasSentSms && !hasFailedSms ? 'success' : 'error';
+  const manualSmsStatuses = result?.smsStatus?.filter((status) => status.status !== 'sent') || [];
+  const manualSmsBody = buildManualSmsBody({ body, mapsLink: location?.mapsLink });
 
   const toggleSelection = (contactId) => {
     setSelectedContactIds((current) => (
@@ -91,7 +95,7 @@ const ContactSelectionDialog = ({
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
 
         <Alert severity="info" sx={{ bgcolor: 'rgba(56,189,248,0.1)', color: '#bae6fd' }}>
-          SMS delivery uses the configured Twilio sender. Phone Link does not provide an official SMS automation API.
+          SMS delivery opens your laptop's linked phone SMS app. Confirm Send there.
         </Alert>
 
         <Box className="space-y-2">
@@ -136,8 +140,8 @@ const ContactSelectionDialog = ({
               <Box key={`${status.phone}-${index}`} className="text-xs bg-slate-950 p-2 rounded border border-white/5 space-y-1">
                 <Box className="flex justify-between gap-3">
                   <span className="text-white">{status.contactName} ({status.phone})</span>
-                  <span className={status.status === 'sent' || status.status.includes('success') ? 'text-accentGreen font-bold' : 'text-red-400 font-bold'}>
-                    {status.status.toUpperCase()}
+                  <span className={isPositiveSmsStatus(status) ? 'text-accentGreen font-bold' : 'text-red-400 font-bold'}>
+                    {status.status === 'ready_to_send' ? 'OPENED' : status.status.toUpperCase()}
                   </span>
                 </Box>
                 {status.error && (
@@ -147,6 +151,32 @@ const ContactSelectionDialog = ({
                 )}
               </Box>
             ))}
+          </Box>
+        )}
+
+        {manualSmsStatuses.length > 0 && (
+          <Box className="space-y-2 bg-slate-950 p-3 rounded border border-white/5">
+            <Typography variant="subtitle2" className="font-bold text-slate-200">
+              Send through linked phone
+            </Typography>
+            <Typography variant="caption" className="block text-slate-400">
+              Opens your laptop's default SMS app. If Phone Link is registered, confirm Send there.
+            </Typography>
+            <Box className="flex flex-wrap gap-2">
+              {manualSmsStatuses.map((status, index) => (
+                <Button
+                  key={`${status.phone}-manual-${index}`}
+                  component="a"
+                  href={buildSmsUri({ phone: status.phone, body: manualSmsBody })}
+                  variant="outlined"
+                  size="small"
+                  color="primary"
+                  startIcon={<SmsIcon />}
+                >
+                  Open SMS app: {status.contactName}
+                </Button>
+              ))}
+            </Box>
           </Box>
         )}
       </DialogContent>
