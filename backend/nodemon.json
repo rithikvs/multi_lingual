@@ -1,0 +1,5 @@
+{
+  "watch": ["server.js", "config", "middleware", "models", "routes", "scripts", "utils"],
+  "ext": "js,json",
+  "ignore": ["*.log", "node_modules", "backend-dev.log", "backend-dev.err.log"]
+}

@@ -1,0 +1,130 @@
+import os
+import json
+import cv2
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision.transforms as transforms
+from torchvision.models import mobilenet_v3_small
+from PIL import Image
+
+def run_webcam_prediction(model_path="best_sign_model.pth", mapping_path="class_mapping.json"):
+    # Check if model and mapping exist
+    if not os.path.exists(model_path):
+        print(f"Error: Model file '{model_path}' not found. Please train the model first.")
+        return
+    if not os.path.exists(mapping_path):
+        print(f"Error: Mapping file '{mapping_path}' not found.")
+        return
+
+    # Load mapping
+    with open(mapping_path, 'r', encoding='utf-8') as f:
+        mapping_data = json.load(f)
+        id_to_class = {int(k): v for k, v in mapping_data['id_to_class'].items()}
+        num_classes = len(id_to_class)
+
+    # Initialize MobileNetV3 model architecture
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Loading model on {device}...")
+    model = mobilenet_v3_small()
+    
+    # Modify classifier to match train.py
+    in_features = model.classifier[3].in_features
+    model.classifier[3] = nn.Linear(in_features, num_classes)
+    
+    # Load weights
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.to(device)
+    model.eval()
+
+    # Image preprocessing pipeline (matches validation transforms)
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    # Initialize OpenCV video capture (webcam 0)
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Error: Could not open webcam. Make sure your camera is connected and not in use by another application.")
+        return
+
+    print("\nWebcam started successfully!")
+    print("Instructions:")
+    print("  - Place your hand inside the green box on screen.")
+    print("  - Press 'q' to exit the application.")
+    print("-" * 50)
+
+    # Define crop window size and location
+    box_size = 250
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Error: Failed to read frame from webcam.")
+            break
+
+        # Flip frame horizontally for natural mirror effect
+        frame = cv2.flip(frame, 1)
+        h, w, c = frame.shape
+
+        # Calculate bounding box coordinates (centered)
+        cx, cy = w // 2, h // 2
+        x1, y1 = cx - box_size // 2, cy - box_size // 2
+        x2, y2 = cx + box_size // 2, cy + box_size // 2
+
+        # Crop the region of interest (ROI)
+        roi = frame[y1:y2, x1:x2]
+
+        # Convert OpenCV BGR image to RGB PIL Image for model
+        roi_rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(roi_rgb)
+
+        # Preprocess and prepare batch tensor
+        img_tensor = transform(pil_img).unsqueeze(0).to(device)
+
+        # Run inference
+        with torch.no_grad():
+            outputs = model(img_tensor)
+            probabilities = F.softmax(outputs, dim=1)[0]
+
+        # Get top prediction
+        top_prob, top_idx = torch.max(probabilities, 0)
+        prob_pct = top_prob.item() * 100.0
+        predicted_class = id_to_class[top_idx.item()]
+
+        # Draw guidance box (green rectangle)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        
+        # Display label above the box if confidence is above a threshold (e.g., 30%)
+        if prob_pct > 30.0:
+            text = f"Sign: {predicted_class} ({prob_pct:.1f}%)"
+            color = (0, 255, 0) # Green for high confidence
+        else:
+            text = f"Searching... ({predicted_class}? {prob_pct:.1f}%)"
+            color = (0, 165, 255) # Orange for low confidence
+
+        # Draw background rectangle for text readability
+        text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
+        cv2.rectangle(frame, (x1, y1 - 30), (x1 + text_size[0] + 10, y1), color, -1)
+        # Draw text
+        cv2.putText(frame, text, (x1 + 5, y1 - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+
+        # Display instructions on screen
+        cv2.putText(frame, "Press 'q' to quit", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+
+        # Show the frame
+        cv2.imshow("Sign Language Detector", frame)
+
+        # Stop if 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Cleanup
+    cap.release()
+    cv2.destroyAllWindows()
+    print("Webcam closed.")
+
+if __name__ == "__main__":
+    run_webcam_prediction()

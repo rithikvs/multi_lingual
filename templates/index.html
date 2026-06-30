@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISL Sign Language to Text Translator</title>
+    <!-- Google Fonts: Inter and Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="stars-bg"></div>
+    <div class="glow-orb" id="orb-1"></div>
+    <div class="glow-orb" id="orb-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <i class="fa-solid fa-hands-asl-interpreting"></i>
+                <h1>Sign<span>Translate</span></h1>
+            </div>
+            <p class="subtitle">Indian Sign Language (ISL) Real-Time Gesture to Text & Speech</p>
+            <div class="status-indicator">
+                <span class="dot" id="system-status-dot"></span>
+                <span id="system-status-text">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <main class="main-dashboard">
+            <!-- Left Column: Video Capture -->
+            <section class="card glass video-section">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-camera"></i> Live Camera Feed</h2>
+                    <div class="controls-row">
+                        <select id="camera-select" class="select-input">
+                            <option value="">Detecting Cameras...</option>
+                        </select>
+                        <button id="toggle-camera-btn" class="btn btn-primary">
+                            <i class="fa-solid fa-power-off"></i> Start Camera
+                        </button>
+                    </div>
+                </div>
+                <div class="video-container">
+                    <video id="webcam" autoplay playsinline muted class="hidden"></video>
+                    <canvas id="capture-canvas" class="hidden"></canvas>
+                    
+                    <div class="camera-placeholder" id="camera-placeholder">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <p>Camera is currently turned off.</p>
+                        <p class="small">Click "Start Camera" above to begin real-time translation.</p>
+                    </div>
+                    
+                    <!-- Bounding box overlay guides -->
+                    <div class="bounding-box-guide" id="box-guide">
+                        <div class="corner top-left"></div>
+                        <div class="corner top-right"></div>
+                        <div class="corner bottom-left"></div>
+                        <div class="corner bottom-right"></div>
+                        <span class="box-label">PLACE HAND HERE</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <p><i class="fa-solid fa-circle-info"></i> Adjust camera so your hand is centered within the square overlay guides.</p>
+                </div>
+            </section>
+
+            <!-- Right Column: Predictor & Text Accumulator -->
+            <section class="right-column">
+                <!-- Real-time Prediction Card -->
+                <div class="card glass prediction-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-bolt-lightning"></i> Real-Time Detection</h2>
+                        <span class="badge" id="fps-badge">0 FPS</span>
+                    </div>
+                    <div class="prediction-body">
+                        <div class="letter-display-container">
+                            <div class="letter-char" id="predicted-letter">-</div>
+                            <div class="letter-meta">
+                                <span class="confidence-label">CONFIDENCE</span>
+                                <span class="confidence-val" id="confidence-pct">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="confidence-bar" style="width: 0%"></div>
+                        </div>
+
+                        <!-- Auto-accumulation Timer progress indicator -->
+                        <div class="timer-bar-container" id="timer-indicator-container">
+                            <div class="timer-bar-fill" id="timer-bar" style="width: 0%"></div>
+                            <span class="timer-text">Hold gesture to lock letter...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Accumulator / Sentence Builder Card -->
+                <div class="card glass text-accumulator-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-file-lines"></i> Word & Sentence Builder</h2>
+                        <div class="action-buttons">
+                            <button id="speak-btn" class="btn btn-icon btn-secondary" title="Speak Text">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                            <button id="copy-btn" class="btn btn-icon btn-secondary" title="Copy to Clipboard">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="accumulator-body">
+                        <div class="text-output-area" id="accumulated-text" contenteditable="true" placeholder="Start signing to build your words..."></div>
+                        
+                        <!-- Word Suggestions / Autocomplete -->
+                        <div class="suggestions-container">
+                            <span class="suggestions-label">Suggestions:</span>
+                            <div class="suggestions-list" id="suggestions-list">
+                                <span class="suggestion-placeholder">Type letters to see suggestions</span>
+                            </div>
+                        </div>
+
+                        <div class="keyboard-controls">
+                            <button id="btn-space" class="btn btn-control">
+                                <i class="fa-solid fa-arrows-left-right"></i> Space
+                            </button>
+                            <button id="btn-backspace" class="btn btn-control">
+                                <i class="fa-solid fa-delete-left"></i> Backspace
+                            </button>
+                            <button id="btn-clear" class="btn btn-control btn-danger">
+                                <i class="fa-solid fa-trash-can"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom: Gesture Reference Grid -->
+        <section class="card glass reference-section">
+            <div class="card-header">
+                <h2><i class="fa-solid fa-book-open"></i> Supported Gesture Reference Chart (ISL Alphabet)</h2>
+                <span class="small-info">Indian Sign Language uses two-hand gestures for some characters, and one-hand for others. Note: J and Y require movement and are not in the dataset.</span>
+            </div>
+            <div class="reference-grid" id="reference-grid">
+                <!-- JavaScript will populate this grid -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
