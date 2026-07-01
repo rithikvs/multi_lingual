@@ -19,11 +19,16 @@ import {
   SignLanguage as SignLanguageIcon,
   Warning as WarningIcon
 } from '@mui/icons-material';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import AdminPanel from './pages/AdminPanel';
+import SignRecognition from './pages/SignRecognition';
+import SpeechTranscription from './pages/SpeechTranscription';
+import Conversation from './pages/Conversation';
+import EmergencyContacts from './pages/EmergencyContacts';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -162,6 +167,7 @@ function AppContent() {
       )}
 
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
@@ -169,6 +175,38 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <Dashboard textScale={textScale} ttsLanguage={ttsLanguage} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sign-recognition"
+          element={
+            <ProtectedRoute>
+              <SignRecognition textScale={textScale} ttsLanguage={ttsLanguage} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/speech-transcription"
+          element={
+            <ProtectedRoute>
+              <SpeechTranscription textScale={textScale} ttsLanguage={ttsLanguage} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/conversation"
+          element={
+            <ProtectedRoute>
+              <Conversation textScale={textScale} ttsLanguage={ttsLanguage} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/emergency-contacts"
+          element={
+            <ProtectedRoute>
+              <EmergencyContacts textScale={textScale} ttsLanguage={ttsLanguage} />
             </ProtectedRoute>
           }
         />
@@ -188,8 +226,7 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-        <Route path="/" element={<Navigate to={token ? '/dashboard' : '/login'} replace />} />
-        <Route path="*" element={<Navigate to={token ? '/dashboard' : '/login'} replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Box>
   );

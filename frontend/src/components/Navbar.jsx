@@ -18,7 +18,10 @@ import {
   Person as PersonIcon, 
   Dashboard as DashboardIcon, 
   AdminPanelSettings as AdminIcon,
-  FormatSize as FontSizeIcon
+  Settings as SettingsIcon,
+  FormatSize as FontSizeIcon,
+  RecordVoiceOver as HearingIcon,
+  Handshake as SignLanguageIcon
 } from '@mui/icons-material';
 
 const Navbar = ({ textScale, setTextScale, ttsLanguage, setTtsLanguage }) => {
@@ -78,6 +81,27 @@ const Navbar = ({ textScale, setTextScale, ttsLanguage, setTtsLanguage }) => {
               onClick={() => navigate('/dashboard')}
             >
               Dashboard
+            </Button>
+            <Button 
+              startIcon={<SignLanguageIcon />} 
+              color={location.pathname === '/sign' ? 'primary' : 'inherit'}
+              onClick={() => navigate('/sign')}
+            >
+              Sign Detector
+            </Button>
+            <Button 
+              startIcon={<HearingIcon />} 
+              color={location.pathname === '/speech' ? 'primary' : 'inherit'}
+              onClick={() => navigate('/speech')}
+            >
+              Speech
+            </Button>
+            <Button 
+              startIcon={<SettingsIcon />} 
+              color={location.pathname === '/settings' ? 'primary' : 'inherit'}
+              onClick={() => navigate('/settings')}
+            >
+              Settings
             </Button>
             
             {user?.role === 'admin' && (

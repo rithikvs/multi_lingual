@@ -26,7 +26,7 @@ const muiTheme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Outfit", "Inter", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter", "Outfit", "Helvetica", "Arial", sans-serif',
     h1: { fontWeight: 800 },
     h2: { fontWeight: 700 },
     h3: { fontWeight: 700 },

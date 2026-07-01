@@ -16,10 +16,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { 
-  Warning as SOSIcon, 
-  VolumeUp as SpeakIcon, 
-  DeleteSweep as ClearHistoryIcon,
-  MyLocation as GpsIcon
+  Warning as SOSIcon, Alarm as AlarmIcon, VolumeUp as SpeakIcon, DeleteSweep as ClearHistoryIcon, MyLocation as GpsIcon
 } from '@mui/icons-material';
 import { getCurrentLocation } from '../utils/location';
 import { buildSmsUri, getSelectedSmsContacts, openSmsCompose, toSmsStatus } from '../utils/smsLinks';
@@ -290,16 +287,21 @@ const ChatBox = ({ textScale, ttsLanguage, messages, setMessages, fetchMessages,
           color="error"
           fullWidth
           size="large"
-          startIcon={<SOSIcon className="animate-bounce" />}
+          startIcon={
+            <Box display="flex" alignItems="center">
+              <SOSIcon className="animate-bounce" sx={{ fontSize: 28 }} />
+              <AlarmIcon className="ml-1 animate-pulse" sx={{ fontSize: 28 }} />
+            </Box>
+          }
           onClick={handleSOSAlert}
-          className="glow-border-red py-3 text-lg font-black tracking-widest uppercase transition-all duration-300 transform active:scale-95"
+          className="glow-border-red py-4 text-2xl font-black tracking-widest uppercase transition-all duration-300 transform active:scale-95"
           sx={{
             background: 'linear-gradient(135deg, #b91c1c 0%, #ef4444 100%)',
             color: 'white',
-            borderRadius: '16px',
+            borderRadius: '18px',
             '&:hover': {
               background: 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)',
-              boxShadow: '0 0 25px rgba(239, 68, 68, 0.7)'
+              boxShadow: '0 0 30px rgba(239, 68, 68, 0.8)'
             }
           }}
         >
