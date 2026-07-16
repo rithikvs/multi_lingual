@@ -147,13 +147,13 @@ const EmergencyContactsPanel = ({ contacts, setContacts, selectedContactIds, set
   };
 
   return (
-    <Paper className="glass-panel p-5 space-y-5 border border-white/5 shadow-xl">
+    <Paper className="surface-card p-5 space-y-5">
       <Box className="flex flex-wrap items-center justify-between gap-3">
         <Box>
-          <Typography variant="h6" className="font-bold text-white flex items-center gap-2">
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 1 }}>
             <ContactIcon color="secondary" /> Emergency Contacts
           </Typography>
-          <Typography variant="caption" className="text-slate-400">
+          <Typography variant="caption" sx={{ color: '#64748b' }}>
             Store contact numbers for SOS and chat SMS delivery.
           </Typography>
         </Box>
@@ -163,110 +163,52 @@ const EmergencyContactsPanel = ({ contacts, setContacts, selectedContactIds, set
       {notice && <Alert severity={notice.severity}>{notice.message}</Alert>}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <TextField
-          label="Name"
-          required
-          size="small"
-          value={form.name}
-          onChange={(event) => updateForm('name', event.target.value)}
-          InputLabelProps={{ style: { color: '#94a3b8' } }}
-          sx={{ '& .MuiOutlinedInput-root': { color: 'white', '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' } } }}
-        />
-        <TextField
-          label="Mobile Number"
-          required
-          size="small"
-          placeholder="+919876543210"
-          value={form.phone}
-          onChange={(event) => updateForm('phone', event.target.value)}
-          InputLabelProps={{ style: { color: '#94a3b8' } }}
-          sx={{ '& .MuiOutlinedInput-root': { color: 'white', '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' } } }}
-        />
-        <TextField
-          label="Relationship"
-          required
-          size="small"
-          value={form.relationship}
-          onChange={(event) => updateForm('relationship', event.target.value)}
-          InputLabelProps={{ style: { color: '#94a3b8' } }}
-          sx={{ '& .MuiOutlinedInput-root': { color: 'white', '& fieldset': { borderColor: 'rgba(255,255,255,0.12)' } } }}
-        />
+        <TextField label="Name" required size="small" value={form.name} onChange={(e) => updateForm('name', e.target.value)} />
+        <TextField label="Mobile Number" required size="small" placeholder="+919876543210" value={form.phone} onChange={(e) => updateForm('phone', e.target.value)} />
+        <TextField label="Relationship" required size="small" value={form.relationship} onChange={(e) => updateForm('relationship', e.target.value)} />
         <Box className="flex items-center gap-2">
-          <FormControlLabel
-            control={
-              <Switch
-                checked={form.isActive}
-                onChange={(event) => updateForm('isActive', event.target.checked)}
-                color="success"
-              />
-            }
-            label={<Typography className="text-slate-300 text-sm">Active</Typography>}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            color="secondary"
-            disabled={loading}
-            startIcon={editingId ? <SaveIcon /> : <AddIcon />}
-          >
+          <FormControlLabel control={<Switch checked={form.isActive} onChange={(e) => updateForm('isActive', e.target.checked)} color="success" />} label="Active" />
+          <Button type="submit" variant="contained" color="secondary" disabled={loading} startIcon={editingId ? <SaveIcon /> : <AddIcon />}>
             {editingId ? 'Save' : 'Add'}
           </Button>
           {editingId && (
             <Tooltip title="Cancel edit">
-              <IconButton onClick={resetForm} color="inherit" sx={{ color: '#94a3b8' }}>
-                <CloseIcon />
-              </IconButton>
+              <IconButton onClick={resetForm}><CloseIcon /></IconButton>
             </Tooltip>
           )}
         </Box>
       </form>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+      <Divider />
 
       <Box className="space-y-3">
         {contacts.length === 0 ? (
-          <Box className="text-center p-5 text-slate-500 italic border border-white/5 rounded-xl bg-slate-950/30">
+          <Box className="text-center p-5 text-slate-400 italic border border-slate-200 rounded-xl bg-slate-50">
             No emergency contacts saved yet.
           </Box>
         ) : (
           contacts.map((contact) => {
             const isActive = contact.isActive !== false;
+            const isSelected = selectedContactIds.includes(contact._id);
             return (
-              <Box
-                key={contact._id}
-                className="flex flex-wrap items-center justify-between gap-3 bg-slate-950/40 p-4 rounded-xl border border-white/5"
-              >
+              <Box key={contact._id} className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <Box className="flex items-center gap-3">
-                  <Checkbox
-                    checked={false}
-                    onChange={() => toggleSelection(contact._id)}
-                    disabled
-                    color="secondary"
-                    sx={{ color: '#94a3b8' }}
-                  />
+                  <Checkbox checked={isSelected} onChange={() => toggleSelection(contact._id)} color="primary" />
                   <Box>
-                    <Typography className="font-bold text-white">
+                    <Typography sx={{ fontWeight: 700, color: '#0f172a' }}>
                       {contact.name}
-                      <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                      <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
                         {isActive ? 'ACTIVE' : 'INACTIVE'}
                       </span>
                     </Typography>
-                    <Typography variant="body2" className="text-slate-400">
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>
                       {contact.relationship} | {contact.phone || contact.mobileNumber}
                     </Typography>
                   </Box>
                 </Box>
                 <Box>
-                  <Tooltip title="Edit contact">
-                    <IconButton onClick={() => handleEdit(contact)} color="inherit" sx={{ color: '#94a3b8' }}>
-                      <EditIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete contact">
-                    <IconButton onClick={() => handleDelete(contact._id)} color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
+                  <Tooltip title="Edit contact"><IconButton onClick={() => handleEdit(contact)}><EditIcon /></IconButton></Tooltip>
+                  <Tooltip title="Delete contact"><IconButton onClick={() => handleDelete(contact._id)} color="error"><DeleteIcon /></IconButton></Tooltip>
                 </Box>
               </Box>
             );

@@ -14,7 +14,9 @@ import {
   Box
 } from '@mui/material';
 import { 
-  Logout as LogoutIcon, 
+  Logout as LogoutIcon,
+  Login as LoginIcon,
+  PersonAdd as SignUpIcon,
   Person as PersonIcon, 
   Dashboard as DashboardIcon, 
   AdminPanelSettings as AdminIcon,
@@ -52,8 +54,6 @@ const Navbar = ({ textScale, setTextScale, ttsLanguage, setTtsLanguage }) => {
     setTextScale(scales[nextIdx]);
   };
 
-  if (!token) return null;
-
   return (
     <AppBar position="static" sx={{ background: 'rgba(15, 23, 42, 0.95)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
       <Toolbar className="flex justify-between items-center py-2 px-4 md:px-8">
@@ -71,10 +71,11 @@ const Navbar = ({ textScale, setTextScale, ttsLanguage, setTtsLanguage }) => {
         </Box>
 
         {/* Action Controls */}
-        <Box className="flex items-center gap-3 md:gap-6">
+        <Box className="flex items-center gap-3 md:gap-6 flex-wrap">
           
-          {/* Navigation Links */}
-          <Box className="hidden md:flex items-center gap-2">
+          {/* Navigation Links - Only show when logged in */}
+          {token && (
+            <Box className="hidden md:flex items-center gap-2">
             <Button 
               startIcon={<DashboardIcon />} 
               color={location.pathname === '/dashboard' ? 'primary' : 'inherit'}
@@ -122,77 +123,186 @@ const Navbar = ({ textScale, setTextScale, ttsLanguage, setTtsLanguage }) => {
               Profile
             </Button>
           </Box>
+          )}
 
-          {/* Accessibility Font Size Toggle */}
-          <Tooltip title="Cycle Text Size (Accessibility)">
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleFontSizeCycle}
-              startIcon={<FontSizeIcon />}
-              sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.2)' }}
-            >
-              A{textScale === 'sm' ? '-' : textScale === 'base' ? '' : textScale === 'lg' ? '+' : textScale === 'xl' ? '++' : '+++'}
-            </Button>
-          </Tooltip>
-
-          {/* Multi-lingual Selector for Speech */}
-          <FormControl variant="outlined" size="small" sx={{ minWidth: 100 }}>
-            <InputLabel id="tts-lang-label" sx={{ color: '#94a3b8' }}>Voice Lang</InputLabel>
-            <Select
-              labelId="tts-lang-label"
-              id="tts-lang-select"
-              value={ttsLanguage}
-              onChange={(e) => setTtsLanguage(e.target.value)}
-              label="Voice Lang"
-              sx={{ 
-                color: 'white', 
-                '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#38bdf8' },
-                '.MuiSvgIcon-root': { color: '#94a3b8' }
-              }}
-            >
-              <MenuItem value="en-US">English</MenuItem>
-              <MenuItem value="hi-IN">Hindi (हिंदी)</MenuItem>
-              <MenuItem value="ta-IN">Tamil (தமிழ்)</MenuItem>
-            </Select>
-          </FormControl>
-
-          {/* Profile & Logout (Mobile Icons / Desktop Buttons) */}
-          <Box className="flex items-center gap-1">
-            <IconButton 
-              className="md:hidden" 
-              color={location.pathname === '/profile' ? 'primary' : 'inherit'}
-              onClick={() => navigate('/profile')}
-            >
-              <PersonIcon />
-            </IconButton>
-
-            {user?.role === 'admin' && (
-              <IconButton 
-                className="md:hidden" 
-                color={location.pathname === '/admin' ? 'primary' : 'inherit'}
-                onClick={() => navigate('/admin')}
+          {/* Accessibility Font Size Toggle - Only show when logged in */}
+          {token && (
+            <Tooltip title="Cycle Text Size (Accessibility)">
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleFontSizeCycle}
+                startIcon={<FontSizeIcon />}
+                sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.2)' }}
               >
-                <AdminIcon />
-              </IconButton>
-            )}
-            
-            <IconButton 
-              className="md:hidden" 
-              color="inherit" 
-              onClick={() => navigate('/dashboard')}
-            >
-              <DashboardIcon />
-            </IconButton>
-
-            <Tooltip title="Sign Out">
-              <IconButton color="error" onClick={handleLogout}>
-                <LogoutIcon />
-              </IconButton>
+                A{textScale === 'sm' ? '-' : textScale === 'base' ? '' : textScale === 'lg' ? '+' : textScale === 'xl' ? '++' : '+++'}
+              </Button>
             </Tooltip>
-          </Box>
-          
+          )}
+
+          {/* Multi-lingual Selector for Speech - Only show when logged in */}
+          {token && (
+            <FormControl variant="outlined" size="small" sx={{ minWidth: 100 }}>
+              <InputLabel id="tts-lang-label" sx={{ color: '#94a3b8' }}>Voice Lang</InputLabel>
+              <Select
+                labelId="tts-lang-label"
+                id="tts-lang-select"
+                value={ttsLanguage}
+                onChange={(e) => setTtsLanguage(e.target.value)}
+                label="Voice Lang"
+                sx={{ 
+                  color: 'white', 
+                  '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#38bdf8' },
+                  '.MuiSvgIcon-root': { color: '#94a3b8' }
+                }}
+              >
+                <MenuItem value="en-US">English</MenuItem>
+                <MenuItem value="hi-IN">Hindi (हिंदी)</MenuItem>
+                <MenuItem value="ta-IN">Tamil (தமிழ्)</MenuItem>
+              </Select>
+            </FormControl>
+          )}
+
+          {/* LOGIN / LOGOUT BUTTONS */}
+          {token ? (
+            // When logged in - show Profile and Sign Out
+            <Box className="flex items-center gap-2">
+              {/* Desktop buttons */}
+              <Button
+                variant="outlined"
+                startIcon={<PersonIcon />}
+                onClick={() => navigate('/profile')}
+                sx={{ 
+                  color: 'white', 
+                  borderColor: 'rgba(255,255,255,0.2)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    backgroundColor: 'rgba(255,255,255,0.05)'
+                  },
+                  display: { xs: 'none', md: 'inline-flex' }
+                }}
+              >
+                My Profile
+              </Button>
+              <Button 
+                variant="contained" 
+                color="error"
+                startIcon={<LogoutIcon />}
+                onClick={handleLogout}
+                sx={{
+                  fontWeight: 'bold',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                    boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)'
+                  },
+                  display: { xs: 'none', md: 'inline-flex' }
+                }}
+              >
+                Sign Out
+              </Button>
+              
+              {/* Mobile icons */}
+              <Box className="md:hidden flex items-center gap-1">
+                <IconButton 
+                  color={location.pathname === '/profile' ? 'primary' : 'inherit'}
+                  onClick={() => navigate('/profile')}
+                >
+                  <PersonIcon />
+                </IconButton>
+
+                {user?.role === 'admin' && (
+                  <IconButton 
+                    color={location.pathname === '/admin' ? 'primary' : 'inherit'}
+                    onClick={() => navigate('/admin')}
+                  >
+                    <AdminIcon />
+                  </IconButton>
+                )}
+                
+                <IconButton 
+                  color="inherit" 
+                  onClick={() => navigate('/dashboard')}
+                >
+                  <DashboardIcon />
+                </IconButton>
+
+                <Tooltip title="Sign Out">
+                  <IconButton color="error" onClick={handleLogout}>
+                    <LogoutIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+          ) : (
+            // When NOT logged in - show Sign Up and Sign In
+            <Box className="flex items-center gap-2">
+              {/* Desktop buttons */}
+              <Button 
+                variant="outlined"
+                startIcon={<SignUpIcon />}
+                onClick={() => navigate('/register')}
+                sx={{ 
+                  color: 'white', 
+                  borderColor: 'rgba(255,255,255,0.2)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56,189,248,0.1)'
+                  },
+                  display: { xs: 'none', md: 'inline-flex' }
+                }}
+              >
+                Sign Up
+              </Button>
+              <Button 
+                variant="contained" 
+                color="primary"
+                startIcon={<LoginIcon />}
+                onClick={() => navigate('/login')}
+                sx={{
+                  fontWeight: 'bold',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                    boxShadow: '0 0 20px rgba(56,189,248,0.5)'
+                  },
+                  display: { xs: 'none', md: 'inline-flex' }
+                }}
+              >
+                Sign In
+              </Button>
+
+              {/* Mobile buttons */}
+              <Button 
+                variant="outlined"
+                startIcon={<SignUpIcon />}
+                size="small"
+                onClick={() => navigate('/register')}
+                sx={{ 
+                  color: 'white', 
+                  borderColor: 'rgba(255,255,255,0.2)',
+                  display: { xs: 'inline-flex', md: 'none' }
+                }}
+              >
+                Sign Up
+              </Button>
+              <Button 
+                variant="contained" 
+                color="primary"
+                startIcon={<LoginIcon />}
+                size="small"
+                onClick={() => navigate('/login')}
+                sx={{
+                  display: { xs: 'inline-flex', md: 'none' }
+                }}
+              >
+                Sign In
+              </Button>
+            </Box>
+          )}
         </Box>
 
       </Toolbar>

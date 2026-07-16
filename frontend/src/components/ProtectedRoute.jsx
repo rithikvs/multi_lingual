@@ -1,25 +1,14 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
-  const token = localStorage.getItem('token');
-  const userString = localStorage.getItem('user');
-  let user = null;
+  const { token, user } = useAuth();
 
-  if (userString) {
-    try {
-      user = JSON.parse(userString);
-    } catch (e) {
-      user = null;
-    }
-  }
-
-  // Check if token exists
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check if admin role is required
   if (requireAdmin && (!user || user.role !== 'admin')) {
     return <Navigate to="/dashboard" replace />;
   }

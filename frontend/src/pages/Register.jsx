@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  TextField, 
-  Button, 
-  Typography, 
-  Alert,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
+import {
+  Box, Card, CardContent, TextField, Button, Typography, Alert, CircularProgress,
+  FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
+import { SignLanguage as SignLanguageIcon } from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    bgcolor: '#ffffff',
+    '& fieldset': { borderColor: '#e2e8f0' },
+    '&:hover fieldset': { borderColor: '#0284c7' },
+    '&.Mui-focused fieldset': { borderColor: '#0284c7' },
+  },
+};
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -24,160 +24,69 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { register, isAuthenticated } = useAuth();
 
-  // Redirect if already logged in
   useEffect(() => {
-    if (localStorage.getItem('token')) {
-      navigate('/dashboard');
-    }
-  }, [navigate]);
+    if (isAuthenticated) navigate('/dashboard');
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', {
-        username,
-        email,
-        password,
-        role
-      });
-
-      if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        navigate('/dashboard');
-      }
+      const result = await register({ username, email, password, role });
+      if (result.success) navigate('/dashboard');
     } catch (err) {
-      setError(
-        err.response?.data?.message || 
-        'Registration failed. Please make sure the backend is active.'
-      );
+      setError(err.response?.data?.message || 'Registration failed. Please ensure the backend is running.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box className="min-h-screen flex items-center justify-center bg-darkBg px-4">
-      <Card className="w-full max-w-md glass-panel p-2 shadow-2xl">
-        <CardContent className="space-y-6">
-          <Box className="text-center space-y-2">
-            <Typography variant="h4" className="font-extrabold text-white tracking-wide">
-              Create Account
-            </Typography>
-            <Typography variant="body2" className="text-slate-400">
-              Sign up to get started with real-time interpretation
+    <Box className="min-h-screen flex items-center justify-center bg-appBg px-4 py-12">
+      <Card sx={{ width: '100%', maxWidth: 440, borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(15,23,42,0.08)' }}>
+        <CardContent sx={{ p: 4 }}>
+          <Box className="text-center mb-6">
+            <Box className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 border border-sky-200 mb-3">
+              <SignLanguageIcon sx={{ color: '#0284c7', fontSize: 32 }} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a' }}>Create Account</Typography>
+            <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
+              Sign up for real-time sign language interpretation
             </Typography>
           </Box>
 
-          {error && <Alert severity="error" className="rounded-lg">{error}</Alert>}
+          {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <TextField
-              label="Username"
-              type="text"
-              variant="outlined"
-              fullWidth
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              InputLabelProps={{ style: { color: '#94a3b8' } }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: 'white',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-                  '&:hover fieldset': { borderColor: '#38bdf8' },
-                }
-              }}
-            />
-
-            <TextField
-              label="Email Address"
-              type="email"
-              variant="outlined"
-              fullWidth
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              InputLabelProps={{ style: { color: '#94a3b8' } }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: 'white',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-                  '&:hover fieldset': { borderColor: '#38bdf8' },
-                }
-              }}
-            />
-
-            <TextField
-              label="Password (min 6 characters)"
-              type="password"
-              variant="outlined"
-              fullWidth
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              InputLabelProps={{ style: { color: '#94a3b8' } }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: 'white',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-                  '&:hover fieldset': { borderColor: '#38bdf8' },
-                }
-              }}
-            />
-
-            <FormControl variant="outlined" fullWidth>
-              <InputLabel id="role-label" sx={{ color: '#94a3b8' }}>Account Type</InputLabel>
-              <Select
-                labelId="role-label"
-                id="role-select"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                label="Account Type"
-                sx={{
-                  color: 'white',
-                  '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
-                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#38bdf8' },
-                  '.MuiSvgIcon-root': { color: '#94a3b8' }
-                }}
-              >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <TextField label="Username" required fullWidth value={username} onChange={(e) => setUsername(e.target.value)} sx={fieldSx} />
+            <TextField label="Email Address" type="email" required fullWidth value={email} onChange={(e) => setEmail(e.target.value)} sx={fieldSx} />
+            <TextField label="Password (min 6 characters)" type="password" required fullWidth value={password} onChange={(e) => setPassword(e.target.value)} sx={fieldSx} />
+            <FormControl fullWidth sx={fieldSx}>
+              <InputLabel>Account Type</InputLabel>
+              <Select value={role} label="Account Type" onChange={(e) => setRole(e.target.value)}>
                 <MenuItem value="user">User (Sign Language Interpreter)</MenuItem>
-                <MenuItem value="admin">Administrator (View Stats & Logs)</MenuItem>
+                <MenuItem value="admin">Administrator</MenuItem>
               </Select>
             </FormControl>
-
             <Button
               type="submit"
               variant="contained"
               fullWidth
               size="large"
               disabled={loading}
-              sx={{
-                background: 'linear-gradient(to right, #38bdf8, #10b981)',
-                color: '#0f172a',
-                fontSize: '1rem',
-                py: 1.5,
-                '&:hover': {
-                  boxShadow: '0 0 15px rgba(56, 189, 248, 0.4)',
-                }
-              }}
+              sx={{ mt: 1, py: 1.5, bgcolor: '#0284c7', background: 'linear-gradient(135deg, #0284c7, #059669)', fontWeight: 700 }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Register'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Create Account'}
             </Button>
           </form>
 
-          <Box className="text-center">
-            <Typography variant="body2" className="text-slate-400">
-              Already have an account?{' '}
-              <RouterLink to="/login" className="text-accentBlue hover:underline font-semibold">
-                Sign In
-              </RouterLink>
-            </Typography>
-          </Box>
+          <Typography variant="body2" sx={{ textAlign: 'center', mt: 3, color: '#64748b' }}>
+            Already have an account?{' '}
+            <RouterLink to="/login" style={{ color: '#0284c7', fontWeight: 700, textDecoration: 'none' }}>Sign In</RouterLink>
+          </Typography>
         </CardContent>
       </Card>
     </Box>

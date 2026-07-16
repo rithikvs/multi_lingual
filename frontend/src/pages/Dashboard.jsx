@@ -6,6 +6,7 @@ import SpeechTranscriber from '../components/SpeechTranscriber';
 import ChatBox from '../components/ChatBox';
 import EmergencyContactsPanel from '../components/EmergencyContactsPanel';
 import ContactSelectionDialog from '../components/ContactSelectionDialog';
+import SosFloatingButton from '../components/SosFloatingButton';
 import { getCurrentLocation } from '../utils/location';
 import { buildManualSmsBody, getSelectedSmsContacts, openSmsCompose, toSmsStatus } from '../utils/smsLinks';
 
@@ -202,25 +203,24 @@ const Dashboard = ({ textScale, ttsLanguage }) => {
   };
 
   return (
-    <Container maxWidth="xl" className="py-6 px-4 md:px-8 space-y-6">
+    <Container maxWidth="xl" className="py-6 px-4 md:px-8 space-y-6 has-sos-button">
       
-      {/* Welcome Greeting */}
-      <Box className="flex justify-between items-center bg-darkCard/35 p-5 rounded-2xl border border-white/5">
+      <Box className="page-header flex justify-between items-center">
         <Box>
-          <Typography variant="h5" className="font-extrabold text-white">
+          <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a' }}>
             Communication Workspace
           </Typography>
-          <Typography variant="body2" className="text-slate-400">
-            Real-time sign language interpreter dashboard and voice transcribing deck.
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
+            Real-time sign language interpreter and voice transcription dashboard.
           </Typography>
         </Box>
-        <Typography variant="caption" className="text-slate-500 font-medium">
-          Workspace Active
+        <Typography variant="caption" sx={{ color: '#059669', fontWeight: 700, bgcolor: '#f0fdf4', px: 2, py: 0.5, borderRadius: 99, border: '1px solid #bbf7d0' }}>
+          Active
         </Typography>
       </Box>
 
       {error && (
-        <Box className="bg-red-950/40 border border-red-500/20 text-red-200 px-4 py-3 rounded-lg text-sm">
+        <Box className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm">
           {error}
         </Box>
       )}
@@ -289,6 +289,14 @@ const Dashboard = ({ textScale, ttsLanguage }) => {
         result={shareResult}
         onClose={() => setShareDialogOpen(false)}
         onConfirm={handleSendSharedMessage}
+      />
+
+      <SosFloatingButton
+        contacts={contacts}
+        selectedContactIds={selectedContactIds}
+        fetchMessages={fetchMessages}
+        localMessagesKey={LOCAL_MESSAGES_KEY}
+        setMessages={setMessages}
       />
       
     </Container>

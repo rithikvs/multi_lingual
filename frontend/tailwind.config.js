@@ -4,27 +4,27 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        darkBg: '#0f172a', // Deep slate/blue-black background
-        darkCard: 'rgba(30, 41, 59, 0.7)', // Semi-transparent card color for glassmorphism
-        accentBlue: '#38bdf8', // Neon blue glow
-        accentGreen: '#10b981', // Emerald green highlights
-        accentRed: '#ef4444', // SOS red glow
+        appBg: '#f1f5f9',
+        appSurface: '#ffffff',
+        appBorder: '#e2e8f0',
+        appMuted: '#64748b',
+        darkBg: '#f1f5f9',
+        darkCard: '#ffffff',
+        accentBlue: '#0284c7',
+        accentGreen: '#059669',
+        accentRed: '#dc2626',
       },
       fontFamily: {
         sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'glow-blue': '0 0 15px rgba(56, 189, 248, 0.4)',
-        'glow-red': '0 0 20px rgba(239, 68, 68, 0.6)',
-        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+        'card': '0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 16px rgba(15, 23, 42, 0.04)',
+        'card-hover': '0 4px 12px rgba(15, 23, 42, 0.1), 0 8px 24px rgba(15, 23, 42, 0.06)',
+        'sos': '0 4px 24px rgba(220, 38, 38, 0.35), 0 0 0 8px rgba(220, 38, 38, 0.12)',
       },
-      backdropBlur: {
-        'xs': '2px',
-      }
     },
   },
   plugins: [],

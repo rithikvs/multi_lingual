@@ -375,43 +375,27 @@ const SignDetector = ({ textScale, ttsLanguage, onCompiledTextSend, onEmergencyG
   return (
     <Box className="flex flex-col gap-4">
       {/* Title Controls Header */}
-      <Box className="flex justify-between items-center bg-darkCard p-4 rounded-xl border border-white/5">
+      <Box className="page-header flex justify-between items-center">
         <Box>
-          <Typography variant="h6" className="font-bold text-white">
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#0f172a' }}>
             Sign Language Interpreter
           </Typography>
-          <Typography variant="caption" className="text-slate-400">
+          <Typography variant="caption" sx={{ color: '#64748b' }}>
             {model ? 'TensorFlow.js CNN-LSTM Model active' : 'Rule-Based Heuristic Parser active'}
           </Typography>
         </Box>
 
         <Box className="flex items-center gap-2">
-          {/* Mode Switch */}
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<LangIcon />}
-            onClick={() => setLanguageMode(prev => prev === 'ISL' ? 'ASL' : 'ISL')}
-            sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.1)' }}
-          >
+          <Button variant="outlined" size="small" startIcon={<LangIcon />} onClick={() => setLanguageMode(prev => prev === 'ISL' ? 'ASL' : 'ISL')}>
             Mode: {languageMode}
           </Button>
-
-          {/* Start/Stop Camera */}
-          <Button
-            variant="contained"
-            color={cameraActive ? 'error' : 'secondary'}
-            startIcon={cameraActive ? <CameraOffIcon /> : <CameraOnIcon />}
-            onClick={() => setCameraActive(prev => !prev)}
-            sx={{ px: 3 }}
-          >
+          <Button variant="contained" color={cameraActive ? 'error' : 'primary'} startIcon={cameraActive ? <CameraOffIcon /> : <CameraOnIcon />} onClick={() => setCameraActive(prev => !prev)} sx={{ px: 3 }}>
             {cameraActive ? 'Stop' : 'Start'}
           </Button>
         </Box>
       </Box>
 
-      {/* Camera Viewport Canvas */}
-      <Box className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-white/5 shadow-2xl flex items-center justify-center">
+      <Box className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-200 border border-slate-200 shadow-card flex items-center justify-center">
         
         {/* Hidden video element for MediaPipe stream */}
         <video
@@ -435,51 +419,38 @@ const SignDetector = ({ textScale, ttsLanguage, onCompiledTextSend, onEmergencyG
         {/* Camera inactive overlay */}
         {!cameraActive && (
           <Box className="text-center p-6 space-y-4">
-            <Box className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+            <Box className="w-16 h-16 rounded-full bg-white flex items-center justify-center mx-auto text-slate-400 border border-slate-200">
               <CameraOffIcon fontSize="large" />
             </Box>
             <Box>
-              <Typography variant="h6" className="font-bold text-white">Camera is Off</Typography>
-              <Typography variant="body2" className="text-slate-400 max-w-xs">
-                Click the 'Start' button above to activate your webcam and begin sign recognition.
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#0f172a' }}>Camera is Off</Typography>
+              <Typography variant="body2" sx={{ color: '#64748b', maxWidth: 280, mx: 'auto' }}>
+                Click the Start button above to activate your webcam and begin sign recognition.
               </Typography>
             </Box>
           </Box>
         )}
 
-        {/* Model loading screen */}
         {modelLoading && (
-          <Box className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+          <Box className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
             <CircularProgress color="primary" />
-            <Typography variant="body2" className="text-accentBlue font-medium">
+            <Typography variant="body2" sx={{ color: '#0284c7', fontWeight: 600 }}>
               Loading AI Interpreter model...
             </Typography>
           </Box>
         )}
 
-        {/* Floating Recognition Badges */}
         {cameraActive && (
           <Box className="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
-            <Chip 
-              label={`Sign: ${prediction}`} 
-              color={prediction === 'None' || prediction.includes('Searching') ? 'default' : 'primary'}
-              className="font-bold shadow-lg"
-              sx={{ background: 'rgba(30, 41, 59, 0.85)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
-            />
-            <Chip 
-              label={`Conf: ${(confidence * 100).toFixed(0)}%`} 
-              color={confidence > 0.75 ? 'success' : 'warning'}
-              className="font-bold shadow-lg"
-              sx={{ background: 'rgba(30, 41, 59, 0.85)', backdropFilter: 'blur(4px)', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
-            />
+            <Chip label={`Sign: ${prediction}`} color={prediction === 'None' || prediction.includes('Searching') ? 'default' : 'primary'} sx={{ fontWeight: 700, boxShadow: 1 }} />
+            <Chip label={`Conf: ${(confidence * 100).toFixed(0)}%`} color={confidence > 0.75 ? 'success' : 'warning'} sx={{ fontWeight: 700, boxShadow: 1 }} />
           </Box>
         )}
       </Box>
 
-      {/* Compiled Text Compiler Section */}
-      <Box className="glass-panel p-4 space-y-4">
+      <Box className="surface-card p-4 space-y-4">
         <Box className="flex justify-between items-center">
-          <Typography variant="subtitle2" className="text-slate-400 font-semibold uppercase tracking-wider">
+          <Typography variant="subtitle2" sx={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Text Compiler
           </Typography>
           <Box className="flex items-center gap-1">
@@ -496,54 +467,19 @@ const SignDetector = ({ textScale, ttsLanguage, onCompiledTextSend, onEmergencyG
           </Box>
         </Box>
 
-        {/* Display compiled message box */}
-        <Box className="bg-slate-950/60 p-4 rounded-xl border border-white/5 min-h-[80px] flex items-center justify-between">
-          <Typography className={`text-white font-medium ${textScale === 'sm' ? 'text-size-sm' : textScale === 'base' ? 'text-size-base' : textScale === 'lg' ? 'text-size-lg' : textScale === 'xl' ? 'text-size-xl' : 'text-size-2xl'}`}>
-            {compiledText || <span className="text-slate-600 italic">Recognized letters will form words here...</span>}
+        <Box className="bg-slate-50 p-4 rounded-xl border border-slate-200 min-h-[80px] flex items-center">
+          <Typography sx={{ color: '#0f172a', fontWeight: 500 }} className={textScale === 'sm' ? 'text-size-sm' : textScale === 'base' ? 'text-size-base' : textScale === 'lg' ? 'text-size-lg' : textScale === 'xl' ? 'text-size-xl' : 'text-size-2xl'}>
+            {compiledText || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Recognized letters will form words here...</span>}
           </Typography>
         </Box>
 
-        {/* Compilation controls */}
         <Box className="flex flex-wrap gap-2 justify-between">
           <Box className="flex gap-2">
-            <Button
-              variant="outlined"
-              onClick={handleSpace}
-              className="border-white/10 hover:border-white/20 text-white"
-            >
-              Add Space
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<SpeakIcon />}
-              onClick={handleTextToSpeech}
-              disabled={!compiledText}
-              color="primary"
-            >
-              Speak Aloud
-            </Button>
+            <Button variant="outlined" onClick={handleSpace}>Add Space</Button>
+            <Button variant="outlined" startIcon={<SpeakIcon />} onClick={handleTextToSpeech} disabled={!compiledText} color="primary">Speak Aloud</Button>
           </Box>
-
-          <Button
-            variant="contained"
-            color="primary"
-            endIcon={<SendIcon />}
-            onClick={handleSendToChat}
-            disabled={!compiledText.trim()}
-            sx={{ px: 4 }}
-          >
-            Send to Chat
-          </Button>
-          <Button
-            variant="outlined"
-            color="secondary"
-            endIcon={<SendIcon />}
-            onClick={handleSendMessage}
-            disabled={!compiledText.trim()}
-            sx={{ px: 3 }}
-          >
-            Send Message
-          </Button>
+          <Button variant="contained" color="primary" endIcon={<SendIcon />} onClick={handleSendToChat} disabled={!compiledText.trim()} sx={{ px: 4 }}>Send to Chat</Button>
+          <Button variant="outlined" color="secondary" endIcon={<SendIcon />} onClick={handleSendMessage} disabled={!compiledText.trim()} sx={{ px: 3 }}>Send Message</Button>
         </Box>
       </Box>
     </Box>
